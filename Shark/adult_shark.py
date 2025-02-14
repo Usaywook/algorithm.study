@@ -1,23 +1,4 @@
-import sys
-from collections import deque
 from collections import OrderedDict
-sys.stdin = open("adult_shark.txt")
-
-di = (-1,1,0,0)
-dj = (0,0,-1,1)
-
-N,M,K = list(map(int, input().split()))
-data = []
-for _ in range(N):
-    data.append(list(map(int, input().split())))
-
-current_direction = list(map(int, input().split()))
-priorities = []
-for _ in range(M):    
-    priority = []
-    for _ in range(4):
-        priority.append(list(map(int, input().split())))
-    priorities.append(priority)
 
 def printMaze(maze):
     for i in range(N):
@@ -29,145 +10,130 @@ def printShark(sharkes):
         print(key, value)
     print()
     
-def solve():
-    # initialize shark
-    # shark state = {num: pos, }
-    # cell state = num, scent
-    maze = []
-    sharkes = {}
+def solve(debug=False):
+        
+    # 초기 격자 초기화 (num, scent)
+    # 상어 초기화 {num: [row, col, direction]}
+    maze = [[(0, 0) for _ in range(N)] for _ in range(N)]
+    sharkes = dict()
     for i in range(N):
-        row = []
+        row = list(map(int, input().split()))
         for j in range(N):
-            if data[i][j] > 0:
-                shark_num = data[i][j]
-                sharkes[shark_num] = deque([(i, j)], maxlen=K)
-                row.append([shark_num, K])
-            else:
-                row.append([0, 0])
-        maze.append(row)
-        
-    # dont consider remove shark when sort with acending order
-    # sharkes = OrderedDict(sorted(sharkes.items(), key=lambda x: x[0], reverse=True))
-    sharkes = OrderedDict(sorted(sharkes.items(), key=lambda x: x[0]))
-    printMaze(maze)
-    print(f"direction: {current_direction}")
-    printShark(sharkes)
-    
-    return dfs(sharkes, maze, M)
-
-def dfs(sharkes, maze, shark_count, step=0):
-    # utill 1000 step
-    if step == 1000:
-        return -1
-    # if 1 shark remain return step
-    if shark_count == 1:
-        return step
-    
-    # for debug
-    # if step == ${debug}:
-    #     return step
-    # print(f"Step {step+1}")
-    # print()
-    
-    # find next pos 
-    for shark_num, traj in sharkes.items():
-        # is out shark -> skip
-        if current_direction[shark_num-1] == -1:
-            continue
-        
-        # generate candidates
-        cand = []
-        pos_i, pos_j = traj[-1]
-        for k in range(4):
-            next_pos_i = pos_i + di[k]
-            next_pos_j = pos_j + dj[k]
-            # out of Bound
-            if next_pos_i < 0 or next_pos_i > N-1 or next_pos_j < 0 or next_pos_j > N-1:
-                continue
-            next_shark_num, next_shark_shadow = maze[next_pos_i][next_pos_j]
-            # shadow
-            if next_shark_shadow != 0:
-                continue
-            cand.append(k+1)
+            if row[j] != 0:
+                shark_num = row[j]
+                # 방향은 나중에 초기화
+                sharkes[shark_num] = [i, j, 0]
+                maze[i][j] = (shark_num, K)
             
+    # 각 상어의 초기 방향 
+    for idx, direction in enumerate(list(map(int, input().split()))):
+        sharkes[idx+1][2] = direction
+    
+    # 번호가 작은 상어부터 이동하기 위한 정렬
+    sharkes = OrderedDict(sorted(sharkes.items(), key=lambda x: x[0]))
+    
+    # 각 상어별 우선순위 방향
+    priorities = dict()
+    for i in range(1, M+1):    
+        priority = dict()
+        for j in range(1, 5):
+            priority[j] = list(map(int, input().split()))
+        priorities[i] = priority
+    
+    if debug:
+        printMaze(maze)
+        printShark(sharkes)
+    
+    # 1000회 반복
+    for step in range(1000):        
+        # 남은 상어가 1마리면 종료
+        if len(sharkes) == 1:
+            return step
         
-        if len(cand) == 0:
-            for k in range(4):
-                next_pos_i = pos_i + di[k]
-                next_pos_j = pos_j + dj[k]
-                # out of Bound
+        # 업데이트를 위한 상어 상태 선언
+        visited = set()
+        new_sharks = OrderedDict()
+        
+        # 번호가 작은 상어부터 이동 (동시에 이동하되, 충돌 시 번호가 큰 상어는 제거)
+        for shark_num, (pos_i, pos_j, direction) in sharkes.items():
+            
+            # 다음 위치 방향 찾기
+            new_pos_i, new_pos_j, new_direction = -1, -1, -1
+            
+            # 인접한 칸 중 냄새가 없는 칸을 우선순위에 따라 탐색
+            moved = False            
+            for next_direction in priorities[shark_num][direction]:
+                next_pos_i = pos_i + di[next_direction - 1]
+                next_pos_j = pos_j + dj[next_direction - 1]
+                # 격자 밖 제외
                 if next_pos_i < 0 or next_pos_i > N-1 or next_pos_j < 0 or next_pos_j > N-1:
+                    continue 
+                # 냄새 있다면 제외
+                _, smell = maze[next_pos_i][next_pos_j]                
+                if smell != 0:
                     continue
-                next_shark_num, _ = maze[next_pos_i][next_pos_j]
-                # shadow
-                if shark_num != next_shark_num:
-                    continue
-                cand.append(k+1)
+                new_pos_i, new_pos_j, new_direction = next_pos_i, next_pos_j, next_direction
+                moved = True
+                break
+                
+                
+            # 만약 냄새 없는 칸이 없으면 우선순위에 따라 탐색 중 자신의 냄새가 있는 칸으로 이동
+            if not moved:
+                for next_direction in priorities[shark_num][direction]:
+                    next_pos_i = pos_i + di[next_direction - 1]
+                    next_pos_j = pos_j + dj[next_direction - 1]
+                    # 격자 밖 제외
+                    if next_pos_i < 0 or next_pos_i > N-1 or next_pos_j < 0 or next_pos_j > N-1:
+                        continue 
+                    next_shark_num, _ = maze[next_pos_i][next_pos_j]
+                    # 자신의 냄새가 아니면 제외
+                    if shark_num != next_shark_num:
+                        continue
+                    new_pos_i, new_pos_j, new_direction = next_pos_i, next_pos_j, next_direction
+                    moved = True
+                    break
+            
+            assert moved
+            
+            # 업데이트할 상어 정보 저장
+            # 충돌 처리: sharks 의 key를 정렬했기 때문에 이미 visited 되었다면 new_sharks 에 정보를 추가하지 않고 넘어감
+            if (new_pos_i, new_pos_j) not in visited:
+                visited.add((new_pos_i, new_pos_j))
+                new_sharks[shark_num] = [new_pos_i, new_pos_j, new_direction]
+            
+        # 냄새를 업데이트               
+        for i in range(N):
+            for j in range(N):
+                num, smell = maze[i][j]
+                if num != 0:
+                    smell -= 1
+                    if smell == 0:
+                        num = 0
+                    maze[i][j] = (num, smell)
                     
-        # consider priority          
-        priority = priorities[shark_num-1][current_direction[shark_num-1]-1]                    
-        temp = []
-        for direction in cand:
-            for idx, prior in enumerate(priority):
-                if direction == prior:
-                    temp.append((direction, idx))
-        temp.sort(key=lambda x: x[1])
-        direction = temp[0][0]
+        # 상어를 업데이트
+        for num, (i, j, _) in new_sharks.items():
+            maze[i][j] = (num, K)
         
-        # set direction
-        current_direction[shark_num-1] = direction                
+        sharkes = new_sharks
         
-    # update shark & map
-    for shark_num, traj in sharkes.items():
-        # for K = 1, traj has been empty 
-        if len(traj) == 0:
-            continue
-        prev_pos_i, prev_pos_j = traj[-1]
-        
-        # update shadow   
-        seen = set()     
-        for k in range(len(traj)):
-            pos_i, pos_j = traj[len(traj) - 1 - k]
-            if maze[pos_i][pos_j][1] > 0 and (pos_i, pos_j) not in seen:
-                maze[pos_i][pos_j][1] -= 1
-                seen.add((pos_i, pos_j))
-            if maze[pos_i][pos_j][1] == 0:
-                maze[pos_i][pos_j][0] = 0
-                traj.popleft()
-                
-        # is alive
-        if current_direction[shark_num-1] == -1:
-            continue
-        
-        # update trajectory
-        direction = current_direction[shark_num-1]
-        curr_pos_i = prev_pos_i + di[direction-1]
-        curr_pos_j = prev_pos_j + dj[direction-1]       
-                
-                
-        # is_out_shark -> set direction = -1       
-        next_shark_num, _ = maze[curr_pos_i][curr_pos_j]        
-        if  next_shark_num !=0 and next_shark_num < shark_num:
-            current_direction[shark_num-1] = -1
-            shark_count -= 1
-            continue
-        
-        # move shark 
-        maze[curr_pos_i][curr_pos_j] = [shark_num, K]
-        traj.append((curr_pos_i, curr_pos_j)) 
-        
-        
-    printMaze(maze)
-    print(f"shark_count: {shark_count}")
-    print(f"direction: {current_direction}")
-    printShark(sharkes)
+        if debug:
+            printMaze(maze)
+            printShark(sharkes)
+
+    return -1
+
+if __name__ == "__main__":
+    import sys
+    sys.stdin = open("adult_shark.txt")
+    T = int(input())
+    global di, dj, N, M, K
     
-    
-    # recursive call
-    step = dfs(sharkes, maze, shark_count, step+1)
-    
-    # rollback        
-    return step
-    
-print(solve())
-    
+    for t in range(T):    
+        di = (-1,1,0,0)
+        dj = (0,0,-1,1)
+
+        N,M,K = list(map(int, input().split()))
+        
+        ans = solve(False)
+        print(ans)
