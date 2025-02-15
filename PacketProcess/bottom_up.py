@@ -11,30 +11,31 @@ def solve():
 
 def solve_bottom_up(cpu_num, packets):
     n = len(packets)
-    # 각 상태는 (processes, queues)로 표현됩니다.
-    # processes: 각 CPU의 finish time을 담은 tuple (길이: cpu_num)
-    # queues: 각 CPU의 waiting sum을 담은 tuple (길이: cpu_num)
-    # dp[i]는 첫 i개의 패킷까지 처리한 후 가능한 상태 집합
-    dp = [set() for _ in range(n)]
-    
-    # 초기 상태: 첫 패킷은 cpu0에서 즉각 처리
+    # 초기 상태: 모든 CPU가 finish time 0, waiting sum 0
     t, L = packets[0]
     init_processes = [0] * cpu_num
     init_queues = [0] * cpu_num
     init_processes[0] = t + L
-    dp[0].add((tuple(init_processes), tuple(init_queues)))
     
+    # dp_state는 (processes, queues)를 나타내는 상태
+    # 여기서는 단계별로 이전 상태만 유지하여 메모리 사용량을 줄임
+    prev_states = set()
+    prev_states.add((tuple(init_processes), tuple(init_queues)))
+    
+    # dp: rolling 방식, 이전 단계의 상태만 유지
     for i in range(1, n):
         t, L = packets[i]
-        for (processes, queues) in dp[i-1]:
+        current_states = set()
+        for (processes, queues) in prev_states:
             proc_list = list(processes)
+            
             # 즉각 처리 경우: 가능한 첫 CPU만 선택 (for-loop 후 break)
             for cpu in range(cpu_num):
                 if proc_list[cpu] <= t:
                     new_proc = list(proc_list)
                     new_proc[cpu] = t + L
-                    dp[i].add((tuple(new_proc), queues))
-                    break
+                    current_states.add((tuple(new_proc), queues))
+                    break  # 첫 유효 CPU만 고려
             
             # 대기 처리 경우: 모든 CPU 중 waiting 시간이 최소인 CPU 선택
             min_length = 11
@@ -49,9 +50,11 @@ def solve_bottom_up(cpu_num, packets):
             if min_cpu != -1 and min_length <= 10:
                 new_queues = list(queues)
                 new_queues[min_cpu] += L
-                dp[i].add((processes, tuple(new_queues)))
-        if not dp[i]:
+                current_states.add((processes, tuple(new_queues)))
+        if not current_states:
             return False
+        # 이전 단계 상태 집합을 현재 상태 집합으로 갱신 (rolling update)
+        prev_states = current_states
     return True
 
 if __name__ == '__main__':
