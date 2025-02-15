@@ -5,8 +5,7 @@ def search(cpu_num, i, packets, processes, queues):
             
     time, length = packets[i]
     
-    # 즉각 처리 경우 
-    is_left = False
+    # 즉각 처리 경우     
     for cpu in range(cpu_num):
         cpu_time = processes[cpu]
         # 즉각처리 불가한 경우 제외
@@ -14,14 +13,16 @@ def search(cpu_num, i, packets, processes, queues):
             continue                    
         processes[cpu] = time + length 
         # call left node
-        is_left = search(cpu_num, i+1, packets, processes, queues)
+        if search(cpu_num, i+1, packets, processes, queues):
+            return True 
         # rollback
         processes[cpu] = cpu_time
         break    
         
     
-    # 큐 대기 경우
-    is_right = False                          
+    # 큐 대기 경우    
+    min_length = 11    
+    min_cpu = -1                  
     for cpu in range(cpu_num):     
         cpu_time = processes[cpu]
         # 즉각처리 가능한 경우 제외
@@ -32,15 +33,19 @@ def search(cpu_num, i, packets, processes, queues):
         packet_length = cpu_time - time + length
         for queue_length in queues[cpu]:
             packet_length += queue_length
+        if min_length > packet_length:
+            min_length = packet_length
+            min_cpu = cpu
             
-        # call right node
-        if packet_length <= 10: 
-            queues[cpu].append(length)            
-            is_right = search(cpu_num, i+1, packets, processes, queues)
-            # rollback
-            queues[cpu].pop()
+    # call right node    
+    if min_cpu != -1 and min_length <= 10: 
+        queues[min_cpu].append(length)            
+        if search(cpu_num, i+1, packets, processes, queues):
+            return True
+        # rollback
+        queues[min_cpu].pop()
        
-    return is_left or is_right
+    return False
     
 def solve():
     N = int(input())    
@@ -63,7 +68,7 @@ if __name__ == '__main__':
     sys.stdin = open("input.txt", 'r')
 
     T = int(input())
-    for t in range(T):
+    for t in range(1, T+1):
         print(f"#{t}", end=" ")
         ans = solve()
         print(ans)
