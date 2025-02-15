@@ -3,91 +3,97 @@ import sys
 def solve():
     N = int(input())
     packets = [tuple(map(int, input().split())) for _ in range(N)]
-    
     for cpu_num in range(1, 6):
         if solve_bottom_up(cpu_num, packets):
             return cpu_num
     return -1
 
-def dominates(state1, state2):
+def dominates(state1, state2, cpu_num):
     """
-    state: (processes, queues)
-    state1 dominates state2 if for every CPU, state1's finish time <= state2's finish time 
-    and waiting sum <= state2's waiting sum, with at least one strict inequality.
+    state는 (p0,...,p_{cpu-1}, q0,...,q_{cpu-1}) 형태의 튜플.
+    state1 dominates state2 if for every cpu:
+        state1[p] <= state2[p] and state1[q] <= state2[q]
+    with at least one strict inequality.
     """
-    processes1, queues1 = state1
-    processes2, queues2 = state2
     strict = False
-    for i in range(len(processes1)):
-        if processes1[i] > processes2[i] or queues1[i] > queues2[i]:
+    for i in range(cpu_num):
+        if state1[i] > state2[i]:
             return False
-        if processes1[i] < processes2[i] or queues1[i] < queues2[i]:
+        if state1[i] < state2[i]:
+            strict = True
+    for i in range(cpu_num, 2*cpu_num):
+        if state1[i] > state2[i]:
+            return False
+        if state1[i] < state2[i]:
             strict = True
     return strict
 
-def add_state(states, new_state):
+def add_state(states, new_state, cpu_num):
     """
-    states: set of states (each state is a tuple: (processes, queues))
-    new_state: candidate state to add.
-    만약 new_state가 기존 상태에 의해 dominated 되면 추가하지 않고,
-    new_state가 기존 상태들을 dominated 한다면 그 상태들을 제거한 후 추가.
+    states: set of compressed states
+    new_state: tuple of length 2*cpu_num
+    기존 상태 중 new_state에 의해 dominated되는 상태들을 제거하고,
+    만약 new_state가 다른 상태에 의해 dominated된다면 추가하지 않음.
     """
     to_remove = set()
-    for st in states:
-        if dominates(st, new_state):
-            # new_state is no better than st -> skip adding
-            return
-        if dominates(new_state, st):
-            to_remove.add(st)
+    for s in states:
+        if dominates(s, new_state, cpu_num):
+            return  # new_state dominated by s -> skip
+        if dominates(new_state, s, cpu_num):
+            to_remove.add(s)
     states.difference_update(to_remove)
     states.add(new_state)
 
 def solve_bottom_up(cpu_num, packets):
     n = len(packets)
-    # 초기 상태: 모든 CPU의 finish time와 waiting sum이 0
-    t, L = packets[0]
+    # 상태: (p0,...,p_{cpu-1}, q0,...,q_{cpu-1})
+    # p_i: finish time of cpu i, q_i: waiting sum at cpu i.
+    t0, L0 = packets[0]
     init_processes = [0] * cpu_num
     init_queues = [0] * cpu_num
     # 첫 패킷은 cpu0에서 즉각 처리
-    init_processes[0] = t + L
+    init_processes[0] = t0 + L0
+    init_state = tuple(init_processes + init_queues)
     
-    # prev_states: 현재까지 도달 가능한 상태 집합
-    prev_states = set()
-    prev_states.add((tuple(init_processes), tuple(init_queues)))
+    prev_states = {init_state}
     
-    # 각 단계마다 rolling dp를 수행
     for i in range(1, n):
         t, L = packets[i]
         current_states = set()
-        for (processes, queues) in prev_states:
-            proc_list = list(processes)
-            que_list = list(queues)
-            # [1] 즉각 처리: 가능한 첫 CPU만 선택 (for-loop 후 break)
+        for state in prev_states:
+            # 복원: state = (p0,...,p_{cpu-1}, q0,...,q_{cpu-1})
+            processes = list(state[:cpu_num])
+            queues = list(state[cpu_num:])
+            # [1] 즉각 처리: 가능한 첫 CPU만 선택
             for cpu in range(cpu_num):
-                if proc_list[cpu] <= t:
-                    new_proc = list(proc_list)
-                    new_proc[cpu] = t + L
-                    # 즉각 처리 시 waiting 값은 그대로
-                    add_state(current_states, (tuple(new_proc), tuple(que_list)))
+                if processes[cpu] <= t:
+                    new_processes = processes.copy()
+                    new_processes[cpu] = t + L
+                    new_state = tuple(new_processes + queues)
+                    add_state(current_states, new_state, cpu_num)
                     break  # 첫 유효 CPU만 고려
             
             # [2] 대기 처리: 모든 CPU 중 waiting 시간이 최소인 CPU 선택
-            min_length = 11
+            min_packet_length = 11
             min_cpu = -1
             for cpu in range(cpu_num):
-                if proc_list[cpu] <= t:
-                    continue  # 즉각 처리 가능한 경우는 대기 branch에서 고려하지 않음
-                packet_length = (proc_list[cpu] - t) + que_list[cpu] + L
-                if packet_length < min_length:
-                    min_length = packet_length
+                if processes[cpu] <= t:
+                    continue
+                packet_length = (processes[cpu] - t) + queues[cpu] + L
+                if packet_length < min_packet_length:
+                    min_packet_length = packet_length
                     min_cpu = cpu
-            if min_cpu != -1 and min_length <= 10:
-                new_queues = list(que_list)
+            if min_cpu != -1 and min_packet_length <= 10:
+                new_queues = queues.copy()
                 new_queues[min_cpu] += L
-                add_state(current_states, (processes, tuple(new_queues)))
+                new_state = tuple(processes + new_queues)
+                add_state(current_states, new_state, cpu_num)
         if not current_states:
             return False
-        prev_states = current_states  # rolling update
+        # 추가: 우위 제거 후, 상태 수가 너무 많으면 상위 k개만 유지 (예: k = 10000)
+        if len(current_states) > 10000:
+            current_states = set(sorted(current_states)[:10000])
+        prev_states = current_states
     return True
 
 if __name__ == '__main__':
