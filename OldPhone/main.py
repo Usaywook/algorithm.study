@@ -11,49 +11,64 @@ for t in range(T):
     
     print(f"#{t+1}", end=" ")
     
-    def getCandidate(K, ans=[]):
+    def getCandidate(K, ans=''):
         if len(ans) > 1 and ans[0] == '0':            
             return
         
         if len(ans) > K-1:                    
-            yield ''.join(ans)       
+            yield ans
             return                
                 
         for number in numbers:
-            yield from getCandidate(K, ans + [number])
+            yield from getCandidate(K, ans + number)
     
-    candidates = [cand for k in range(1, 4) for cand in getCandidate(k)]
-    states = [-1] * 1000    
-          
-    queue = deque(list(zip(map(list, candidates[:]), map(int, candidates[:]), [1] * len(candidates))))
+    def getCandidates():
+        for k in range(1, 4):
+            for cand in getCandidate(k):
+                yield cand
+                    
+    states = {}
+    queue = deque()
+    candidates_list = list(getCandidates())
+    for candidate in candidates_list:
+        num = int(candidate)
+        queue.append((num, len(candidate), 1))  # (숫자, 입력한 길이, 연산 횟수)
+    
     while queue:
-        select, number, depth = queue.popleft()             
-        # condition
-        if len(select) > M or number < 0 or number > 999:
-            continue
-        # pruning
-        if states[number] > len(select):
-            continue
+        number, length, depth = queue.popleft()                     
+        if number in states and states[number] <= length:                   
+            continue      
+        
         # update states
-        states[number] = len(select) if depth == 1 else len(select) + 1            
+        states[number] = length if depth == 1 else length + 1            
         # base case
-        if number == W:
-            # print(select)
+        if number == W:            
             break 
         # select operator
         for operator in operators:
             # select number
-            for candidate in candidates:                    
-                select_number = int(candidate)     
-                select_number_list = list(map(list, candidate))           
+            for candidate in candidates_list:                    
+                select_number = int(candidate)                       
                 if operator == '1':                                        
-                    queue.append((select + ['+'] + select_number_list, number + select_number, depth + 1))
+                    ans_number = number + select_number
                 elif operator == '2':
-                    queue.append((select + ['-'] + select_number_list, number - select_number, depth + 1))
+                    ans_number = number - select_number
                 elif operator == '3':
-                    queue.append((select + ['*'] + select_number_list, int(number * select_number), depth + 1))
+                    ans_number = int(number * select_number)
                 elif operator == '4':                        
                     if select_number == 0:
-                        continue
-                    queue.append((select + ['/'] + select_number_list, int(number / select_number), depth + 1))    
-    print(states[W])                                    
+                        continue 
+                    ans_number = int(number / select_number)           
+                ans_length = length + len(candidate) + 1
+                # condition
+                if ans_length > M or ans_number < 0 or ans_number > 999:
+                    continue
+                # pruning
+                if ans_number in states and states[ans_number] <= ans_length:
+                    continue
+                queue.append((ans_number, length + len(candidate) + 1, depth + 1))    
+                
+    if W in states:        
+        print(states[W])                                    
+    else:
+        print(-1)
