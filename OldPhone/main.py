@@ -31,16 +31,13 @@ for t in range(T):
     queue = deque()
     candidates_list = list(getCandidates())
     for candidate in candidates_list:
-        num = int(candidate)
-        queue.append((num, len(candidate), 1))  # (숫자, 입력한 길이, 연산 횟수)
+        number = int(candidate)
+        states[number] = len(candidate)
+        queue.append((number, len(candidate), 1))  # (숫자, 입력한 길이, 연산 횟수)
     
     while queue:
-        number, length, depth = queue.popleft()                     
-        if number in states and states[number] <= length:                   
-            continue      
-        
-        # update states
-        states[number] = length if depth == 1 else length + 1            
+        number, length, depth = queue.popleft()                             
+                
         # base case
         if number == W:            
             break 
@@ -58,15 +55,17 @@ for t in range(T):
                 elif operator == '4':                        
                     if select_number == 0:
                         continue 
-                    ans_number = int(number / select_number)           
+                    ans_number = number // select_number
                 ans_length = length + len(candidate) + 1
                 # condition
-                if ans_length > M or ans_number < 0 or ans_number > 999:
+                if ans_length + 1 > M or ans_number < 0 or ans_number > 999:
                     continue
                 # pruning
-                if ans_number in states and states[ans_number] <= ans_length:
+                if ans_number in states and states[ans_number] <= ans_length + 1:
                     continue
-                queue.append((ans_number, length + len(candidate) + 1, depth + 1))    
+                # update states
+                states[ans_number] = ans_length + 1
+                queue.append((ans_number, ans_length, depth + 1))    
                 
     if W in states:        
         print(states[W])                                    
