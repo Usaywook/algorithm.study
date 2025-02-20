@@ -1,4 +1,4 @@
-from memory import memory_usage_decorator 
+from evaluator import memory_usage_decorator 
 import sys
 sys.stdin = open("input.txt", "r")
 
