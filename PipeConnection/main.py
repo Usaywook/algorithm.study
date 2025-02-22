@@ -35,12 +35,13 @@ def backTracking(array, prev_x, prev_y, curr_x, curr_y, visited=None, cnt=0, min
     if visited is None:
         visited = [[False for _ in range(N)] for _ in range(N)]
     
+    # end condiition
     if curr_x == 0 and curr_y == -1:
         if cnt < min_ans:
             min_ans = cnt
         return min_ans
     
-    # end condition
+    # pruning condition
     if is_end(N, array, curr_x, curr_y, visited, cnt, min_ans):
         return min_ans
         
@@ -69,7 +70,7 @@ def backTracking(array, prev_x, prev_y, curr_x, curr_y, visited=None, cnt=0, min
             # from vertical -> to left & right            
             min_ans = backTracking(array, curr_x, curr_y, curr_x, curr_y-1, visited, cnt+1, min_ans)
             min_ans = backTracking(array, curr_x, curr_y, curr_x, curr_y+1, visited, cnt+1, min_ans)
-                    
+    # rollback 
     visited[curr_x][curr_y] = False
     
     return min_ans
