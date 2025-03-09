@@ -32,7 +32,8 @@ for t in range(1, T+1):
     ans = 0
     for ci in range(N):
         for cj in range(N):
-            for ck in range(1, 2*N):
+            max_dist = max([abs(ci-u) + abs(cj-v)+1 for u in range(N) for v in range(N)])
+            for ck in range(1, max_dist+1):
                 operate_cost = getOperateCost(ck)
                 
                 count = 0
