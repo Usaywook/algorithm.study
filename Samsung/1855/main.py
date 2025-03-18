@@ -37,9 +37,12 @@ for t in range(1, T+1):
     # print(path)
 
     # bi-direct
+    # 복사안하면 반복문 도중 에러 방생가능성 있음.
+    graph = defaultdict(list)
     for p, cs in G.items():
+        graph[p].extend(cs)
         for c in cs:
-            G[c].append(p)
+            graph[c].append(p)
 
     def search(s, e):
         Q = deque([(s, 0)])
@@ -49,9 +52,10 @@ for t in range(1, T+1):
             if u == e:
                 return d
             visited.add(u)
-            for v in G[u]:
+            for v in graph[u]:
                 if v not in visited:
                     Q.append((v, d + 1))
+        return -1  # 도달할 수 없는 경우
 
     ans = 0
     for (u, a), (v, b) in zip(path[:-1], path[1:]):
@@ -62,4 +66,4 @@ for t in range(1, T+1):
         #     ans += 1
         # else:
         #     ans += a + b
-    print(ans)
+    print(f"#{t} {ans}")
