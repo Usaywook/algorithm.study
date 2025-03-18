@@ -27,7 +27,7 @@ for t in range(1, T + 1):
             for next_ind in range(2, N+2):
                 next_node = nodes[next_ind]
                 if next_ind not in visited:
-                    search(next_ind, dist + getDist(cur_node, next_node), visited | {next_ind})
+                    search(next_ind, dist + getDist(cur_node, next_node), visited)
         visited.remove(cur_ind)
 
     ans = 200 * N + 1
