@@ -14,10 +14,8 @@ for t in range(1, T+1):
         G[x].append(i + 2)
         P[i+2] = x
 
-    # if t != 3:
-    #     continue
-
     path = []
+    ans = 0
     def bfs(s):
         Q = deque([(s, 0)])
         visited = set()
@@ -30,40 +28,20 @@ for t in range(1, T+1):
                 if v not in visited:
                     Q.append((v, d+1))
 
-
-    # print(G)
-    # print(P)
     bfs(1)
-    # print(path)
 
-    # bi-direct
-    # 복사안하면 반복문 도중 에러 방생가능성 있음.
-    graph = defaultdict(list)
-    for p, cs in G.items():
-        graph[p].extend(cs)
-        for c in cs:
-            graph[c].append(p)
+    def findLowestCommonAncestor(u, v, cnt = 0):
+        while u != v:
+            u, v = P[u], P[v]
+            cnt += 2
+        return cnt
 
-    def search(s, e):
-        Q = deque([(s, 0)])
-        visited = set()
-        while Q:
-            u, d = Q.popleft()
-            if u == e:
-                return d
-            visited.add(u)
-            for v in graph[u]:
-                if v not in visited:
-                    Q.append((v, d + 1))
-        return -1  # 도달할 수 없는 경우
-
-    ans = 0
     for (u, a), (v, b) in zip(path[:-1], path[1:]):
-        dist = search(u, v)
-        # print(u, v, dist)
-        ans += dist
-        # if v in G[u]:
-        #     ans += 1
-        # else:
-        #     ans += a + b
+        if a == b:
+            ans += findLowestCommonAncestor(u, v, 0)
+        elif a + 1 == b:
+            ans += findLowestCommonAncestor(u, P[v], 1)
+        else:
+            raise NotImplementedError
+
     print(f"#{t} {ans}")
