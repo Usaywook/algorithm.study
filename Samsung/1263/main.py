@@ -17,6 +17,9 @@ for t in range(1, T+1):
                 graph[i].append(j)
 
     def getClosenessCentrality(i):
+        """
+        using dijkstra algorithm
+        """
         dist = [N-1] * N
         dist[i] = 0
         queue = [(0, i)]
