@@ -18,7 +18,8 @@ for t in range(1, T+1):
 
     def getClosenessCentrality(i):
         """
-        using dijkstra algorithm
+        using Dijkstra algorithm
+        Time Complexity : O(ElogN)
         """
         dist = [N-1] * N
         dist[i] = 0
@@ -34,6 +35,7 @@ for t in range(1, T+1):
         return sum(dist)
 
     ans = (N-1) * N
+    # Total Time Complexity : O(NElogN)
     for i in range(N):
         ans = min(ans, getClosenessCentrality(i))
 
