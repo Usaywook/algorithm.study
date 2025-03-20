@@ -27,6 +27,8 @@ for t in range(1, T+1):
         visited = [False] * N
         while queue:
             du, u = heappop(queue)
+            if visited[u]:
+                continue
             visited[u] = True
             for v in graph[u]:
                 if not visited[v] and du + 1 < dist[v]:

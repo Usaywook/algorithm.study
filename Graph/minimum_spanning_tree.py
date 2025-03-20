@@ -1,3 +1,5 @@
+from heapq import heappush, heappop, heapify
+
 edges = [
     ('a', 'b', 29),
     ('a', 'f', 10),
@@ -40,8 +42,10 @@ def kruskal():
     makeset()
     
     cost = 0
+    # 간선의 비용 순으로 정렬
     edges.sort(key=lambda x: x[2])
     for u, v, w in edges:
+        # u 와 v가 서로소 이면 합침
         if find(u) != find(v):
             union(u, v)
             cost += w
@@ -49,7 +53,7 @@ def kruskal():
     return cost
 
 from collections import defaultdict
-def prim(s, tree=[], cost=0, visited=None):    
+def primRecursive(s, tree=[], cost=0, visited=None):
     if len(tree) == len(V) - 1:
         return cost
     
@@ -67,7 +71,66 @@ def prim(s, tree=[], cost=0, visited=None):
             min_w = w
     if min_e is not None:
         print(f"{s} - {min_w} - {min_e}")
-        return prim(min_e, tree + [(s, min_e)], cost + min_w, visited)
+        return primRecursive(min_e, tree + [(s, min_e)], cost + min_w, visited)
+
+def primIterative(start):
+    """
+    graph: 각 노드에 대해 (이웃 노드, 가중치) 튜플의 리스트를 가지는 딕셔너리
+    start: 시작 노드
+    """
+    visited = set()  # MST에 포함된 노드들을 저장
+    min_heap = []  # (가중치, 시작노드, 도착노드)를 저장하는 최소 힙
+    total_cost = 0  # MST의 총 비용
+
+    # 시작 노드를 방문하고, 시작 노드와 인접한 모든 간선을 최소 힙에 추가
+    visited.add(start)
+    for neighbor, w in graph[start]:
+        heappush(min_heap, (w, start, neighbor))
+
+    while min_heap:
+        weight, frm, to = heappop(min_heap)
+        # 이미 방문한 노드면 스킵
+        if to in visited:
+            continue
+
+        # 새로운 노드를 방문하고, 간선의 가중치를 비용에 추가
+        visited.add(to)
+        total_cost += weight
+        print(f"{frm} - {weight} - {to}")
+
+        # 새로 방문한 노드의 인접 간선들을 최소 힙에 추가
+        for neighbor, w in graph[to]:
+            if neighbor not in visited:
+                heappush(min_heap, (w, to, neighbor))
+
+    return total_cost
+
+
+def prim_simple(start):
+    """
+    간선정보 저장할 필요없나면 간단하게 이와같이 구현
+    """
+    visited = set()
+    min_heap = []
+    total_cost = 0
+
+    visited.add(start)
+    for neighbor, weight in graph[start]:
+        heappush(min_heap, (weight, neighbor))
+
+    while min_heap:
+        weight, node = heappop(min_heap)
+        if node in visited:
+            continue
+
+        visited.add(node)
+        total_cost += weight
+
+        for neighbor, w in graph[node]:
+            if neighbor not in visited:
+                heappush(min_heap, (w, neighbor))
+
+    return total_cost
 
 graph = defaultdict(list)
 V = set()
@@ -78,4 +141,6 @@ for u, v, w in edges:
     V.add(v)
     
 print(kruskal())
-print(prim('a'))
+print(primRecursive('a'))
+print(primIterative('a'))
+print(prim_simple('a'))
