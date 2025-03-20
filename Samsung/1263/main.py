@@ -1,13 +1,20 @@
 import sys
 sys.stdin = open("input.txt", "r")
 
+from collections import defaultdict
 from heapq import heappush, heappop, heapify
 
 T = int(input())
 for t in range(1, T+1):
     it = iter(map(int, input().split()))
     N = next(it)
-    matrix = [list(x) for x in zip(*[it]*N)]
+    # matrix = [list(x) for x in zip(*[it]*N)]
+    graph = defaultdict(list)
+    for i in range(N):
+        for j in range(N):
+            e = next(it)
+            if e != 0:
+                graph[i].append(j)
 
     def getClosenessCentrality(i):
         dist = [N-1] * N
@@ -17,11 +24,9 @@ for t in range(1, T+1):
         while queue:
             du, u = heappop(queue)
             visited[u] = True
-            for v, e in enumerate(matrix[u]):
-                if e == 0:
-                    continue
-                if not visited[v] and du + e < dist[v]:
-                    dist[v] = du + e
+            for v in graph[u]:
+                if not visited[v] and du + 1 < dist[v]:
+                    dist[v] = du + 1
                     heappush(queue, (dist[v], v))
         return sum(dist)
 
