@@ -75,14 +75,15 @@ def calculate(arr):
     return get_ans(get_arr(arr))
 
 def search(i, p_cnt = 0, new_arr = []):
+    """
+    O(N^2 * 2^{N-1 / 2}
+    """
     global ans
-    global candidates
     if i == N:
-        candidates.append(new_arr[:])
         res = calculate(new_arr)
         ans = max(ans, res)
         # print(f"leaf: {new_arr} {res}")
-        # print()
+        print()
         return
 
     K = (N - i) // 2
@@ -144,6 +145,5 @@ def search(i, p_cnt = 0, new_arr = []):
         new_arr.pop()
 
 ans = -2**31
-candidates = []
 search(0)
 print(ans)

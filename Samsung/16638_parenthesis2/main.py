@@ -54,6 +54,9 @@ def calculate(arr):
     return get_ans(new_arr)
 
 def search(i, flag=False, p_ind=0, new_arr = []):
+    """
+    O(N * 2^{N-1 / 2}
+    """
     global ans
     if i == N:
         res = calculate(new_arr)
