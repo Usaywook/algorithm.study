@@ -11,19 +11,30 @@ for i, x in enumerate(input()):
 
 def calculate(arr):
     def get_ans(segment):
-        res = segment[0]
+        new_segment = []
+        it = iter(segment)
+        for x in it:
+            if x == "*":
+                p = new_segment.pop()
+                q = next(it)
+                r = p * q
+                new_segment.append(r)
+            else:
+                new_segment.append(x)
+
+        res = new_segment[0]
         cnt = 1
-        while cnt < len(segment):
-            x = segment[cnt]
+        while cnt < len(new_segment):
+            x = new_segment[cnt]
             if x == "+":
                 cnt += 1
-                res += segment[cnt]
+                res += new_segment[cnt]
             elif x == "-":
                 cnt += 1
-                res -= segment[cnt]
+                res -= new_segment[cnt]
             elif x == "*":
                 cnt += 1
-                res *= segment[cnt]
+                res *= new_segment[cnt]
             cnt += 1
         return res
 
@@ -47,7 +58,7 @@ def search(i, flag=False, p_ind=0, new_arr = []):
     if i == N:
         res = calculate(new_arr)
         ans = max(ans, res)
-        print(f"{new_arr} {res}")
+        # print(f"{new_arr} {res}")
         return
 
     x = array[i]
