@@ -1,6 +1,6 @@
 import sys
 sys.stdin = open("input.txt", "r")
-sys.path.append('../')
+sys.path.append('../../')
 from evaluator import memory_usage_decorator
 
 # 대각선
