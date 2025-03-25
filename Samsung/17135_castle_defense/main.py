@@ -61,9 +61,9 @@ for t in range(1, T + 1):
             if e == 1:
                 e_cnt[j] += 1
                 enemies.add((i, j))
-    e_list = sorted(list(range(M)), key=lambda x: e_cnt[x], reverse=True)
+    e_priority = sorted(list(range(M)), key=lambda x: e_cnt[x], reverse=True)
     total_e = len(enemies)
-    # print(e_list)
+    # print(e_priority)
 
     # O(MC3 * sim)
     # sim =  적의 수 * log 적의 수
@@ -72,7 +72,6 @@ for t in range(1, T + 1):
     for i in range(M):
         for j in range(i+1, M):
             for k in range(j+1, M):
-                p, q, r = e_list[i], e_list[j], e_list[k]
-                # print(f"start: {p}, {q}, {r}")
+                p, q, r = e_priority[i], e_priority[j], e_priority[k]
                 ans = max(ans, simulate(enemies.copy()))
     print(f"#{t} {ans}")
