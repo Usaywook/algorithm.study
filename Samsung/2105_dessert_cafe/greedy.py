@@ -35,7 +35,7 @@ def find_path():
                         return total_length * 2
     return -1
 
-@memory_usage_decorator
+# @memory_usage_decorator
 def main():
     global T, N, MAP
     T = int(input())

@@ -15,7 +15,10 @@ def main():
             grid.append(list(map(int, input().split())))
         
         def search(i, j, si, sj, visited, checked, d=0, direction=0, length=-1):
-                                    
+            nonlocal ans
+            if direction == 2 and 2 * d < ans:
+                return length
+
             for k in range(direction, max(direction + 1, 4)):
                 ni, nj = i + di[k], j + dj[k]
                 
@@ -43,10 +46,18 @@ def main():
         ans = -1
         for i in range(N):
             for j in range(N):
-                visited = [[0] * N for _ in range(N)]     
-                visited[i][j] = 1     
-                checked = set([grid[i][j]])                   
-                cnt = search(i, j, i, j, visited, checked)            
+                if i == 0 and j == 0:
+                    continue
+                if i == 0 and j==N-1:
+                    continue
+                if i == N-1 and j == 0:
+                    continue
+                if i == N-1 and j==N-1:
+                    continue
+                visited = [[0] * N for _ in range(N)]
+                visited[i][j] = 1
+                checked = set([grid[i][j]])
+                cnt = search(i, j, i, j, visited, checked)
                 ans = max(ans, cnt)
                 
         print(f"#{t} {ans}")
