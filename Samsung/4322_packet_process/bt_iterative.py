@@ -21,13 +21,14 @@ for t in range(1, T+1):
                 return True
 
             cur, ptime = packets[pidx]
-            diff = cur - prev
 
             # cpu 별 남은 대기 시간 갱신
+            diff = cur - prev
             wtimes = [max(w - diff, 0) for w in wtimes]
 
-            # 이미 탐색한 상태 캐싱으로 처리 단순히 처리 가능만 여부만 보기 때문에 set +  continue면 충분
-            key = (pidx, tuple(sorted(wtimes)))
+            # 이미 탐색한 상태 캐싱으로 처리
+            wtimes.sort()
+            key = (pidx, tuple(wtimes))
             if key in memory:
                 continue
             memory.add(key)
