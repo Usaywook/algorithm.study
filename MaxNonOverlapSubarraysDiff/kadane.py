@@ -17,9 +17,46 @@ for j in range(n - 2, -1, -1):
 
 max_diff = - INF
 for k in range(1, n):
-    # [k, n-1) 의 최대 부분합 - [0, k) 의 최소 부분합
+        # [k, n) 의 최대 부분합 - [0, k) 의 최소 부분합
     max_diff = max(right_max[k] - left_min[k-1], max_diff)
 
 print(left_min)
 print(right_max)
 print(max_diff)
+
+matrix = [
+    [ 1,  2, -1, -4],
+    [-8, -3,  4,  2],
+    [ 3,  8, 10,  1]
+]
+
+ans = -float('inf')
+rows, cols = len(matrix), len(matrix[0])
+
+corner = [0,0,0,0]
+for top in range(rows):
+    temp = [0] * cols  # 열 누적합
+    for bottom in range(top, rows):
+        # 열 누적합 갱신
+        for col in range(cols):
+            temp[col] += matrix[bottom][col]
+
+        # Kadane's algorithm on temp
+        current_max = temp[0]
+        max_ending_here = temp[0]
+        for col in range(1, cols):
+            if temp[col] > max_ending_here + temp[col]:
+                corner[0] = top
+                corner[2] = col
+            max_ending_here = max(temp[col], max_ending_here + temp[col])
+            if max_ending_here > current_max:
+                corner[1] = bottom
+                corner[3] = col
+            current_max = max(current_max, max_ending_here)
+
+        ans = max(ans, current_max)
+
+for i in range(rows):
+    if i >= corner[0] and i <= corner[1]:
+        print(matrix[i][corner[2]:corner[3]+1])
+print(ans)
