@@ -13,6 +13,16 @@ def PermutationRecursive(remain: List, select: List=[]):
         # print(f'i={i}, remain={remain}, select={select}')
         yield from PermutationRecursive(remain[:i] + remain[i+1:], select=select + [remain[i]])
 
+def permutation(depth, arr):
+    if depth == len(arr):
+        # simulate
+        return
+
+    for i in range(depth, len(arr)):
+        arr[depth], arr[i] = arr[i], arr[depth]
+        permutation(depth + 1)
+        arr[depth], arr[i] = arr[i], arr[depth]
+
 def PermutationTownDown(remain: List):
     """
     How to make top-down
