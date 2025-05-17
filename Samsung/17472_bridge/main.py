@@ -2,7 +2,8 @@
 import sys
 sys.stdin = open("input.txt", "r")
 
-from collections import deque
+from collections import deque, defaultdict
+import heapq
 
 T = int(input())
 for t in range(1, T+1):
@@ -12,38 +13,10 @@ for t in range(1, T+1):
         grid.append(list(map(int, input().split())))
 
     ground = {}
-    nonground = []
     for i in range(N):
         for j in range(M):
             if grid[i][j] == 1:
                 ground[(i, j)] = len(ground)
-            else:
-                nonground.append((i, j))
-
-    parent = []
-    rank = []
-    for (i, j), k in ground.items():
-        parent.append(k)
-        rank.append(0)
-
-    def find(x):
-        if parent[x] == x:
-            return x
-        else:
-            parent[x] = find(parent[x])
-            return parent[x]
-
-    def union(x, y):
-        x = find(x)
-        y = find(y)
-        if x == y:
-            return
-        if rank[x] < rank[y]:
-            parent[x] = y
-        else:
-            parent[y] = x
-            if rank[x] == rank[y]:
-                rank[x] += 1
 
     def is_out(i, j):
         if i < 0 or i > N - 1 or j < 0 or j > M - 1:
@@ -54,10 +27,10 @@ for t in range(1, T+1):
         global visited
         visited[sk] = 1
         grid[si][sj] = ind
-        queue = deque([(si, sj, sk, 0)])
+        queue = deque([(si, sj, 0)])
 
         while queue:
-            i, j, k, d = queue.popleft()
+            i, j, d = queue.popleft()
             for di, dj in zip((-1, 1, 0, 0), (0, 0, -1, 1)):
                 ni, nj = i + di, j + dj
                 if is_out(ni, nj):
@@ -69,71 +42,63 @@ for t in range(1, T+1):
                     continue
                 visited[nk] = 1
                 grid[ni][nj] = ind
-                union(k, nk)
-                queue.append((ni, nj, nk, d+1))
+                queue.append((ni, nj, d+1))
 
+    # 섬 분할
     visited = [0] * len(ground)
     num_nodes = 0
     for (i, j), k in ground.items():
         if visited[k]:
             continue
-        bfs(i, j, k, num_nodes + 1)
+        bfs(i, j, k, num_nodes + 2)
         num_nodes += 1
 
-    ans = MAX = N * M * (num_nodes - 1)
-    def search(d = 0, res=0, nodes=set()):
-        global ans
-        if d == len(nonground):
-            return
-
-        if len(nodes) == num_nodes:
-            # print(f"leaf: {ans}, {res}, {nodes}")
-            ans = min(ans, res)
-            return
-
-        if res > ans:
-            return ans
-
-        i, j = nonground[d]
-        # print(i, j, d)
-
+    # 다리 후보 찾기
+    # bridges = []
+    graph = defaultdict(dict)
+    for i, j in ground.keys():
+        start = grid[i][j]
         for di, dj in zip((-1, 1, 0, 0), (0, 0, -1, 1)):
+            length = 0
             ni, nj = i + di, j + dj
-            if is_out(ni, nj):
-                continue
-            if grid[ni][nj] == 0:
-                continue
-            begin = grid[ni][nj]
+            while not is_out(ni, nj):
+                end = grid[ni][nj]
+                if end == start:
+                    break
+                if end > 0:
+                    if length > 1:
+                        # bridges.append((start, end, length))
+                        graph[start][end] = min(graph[start].get(end, 10), length)
+                    break
+                ni += di
+                nj += dj
+                length += 1
 
-            def search_ground(si, sj, di, dj, length=0):
-                ni, nj = si + di, sj + dj
+    # 최소 신장 트리 구하기
+    visited = [0] * num_nodes
+    min_heap = []
+    # parent = {}
+    ans = 0
+    start = 2
+    visited[start-2] = 1
+    for neighbor, w in graph[start].items():
+        heapq.heappush(min_heap, (w, start, neighbor))
 
-                if is_out(ni, nj):
-                    return 0
-                if grid[ni][nj] == 0:
-                    return search_ground(ni, nj, di, dj, length + 1)
-                else:
-                    return 0 if grid[ni][nj] in nodes else length + 1
+    while min_heap:
+        w, frm, to = heapq.heappop(min_heap)
 
-            length = search_ground(i, j, -di, -dj)
-            if length <= 1:
-                continue
-            ei, ej = i - length * di, j - length * dj
-            end = grid[ei][ej]
-            # print(f"{d} / {len(nonground)}: {(ni, nj)}, {(ei, ej)}, {begin}-{length}-{end}, {res + length}")
-            search(d+1, res + length, nodes | {begin, end})
+        if visited[to-2]:
+            continue
+        visited[to-2] = 1
+        ans += w
+        # parent[to] = frm
 
-        search(d+1, res)
+        for neighbor, w in graph[to].items():
+            if not visited[neighbor-2]:
+                heapq.heappush(min_heap, (w, to, neighbor))
 
-    if t != 1:
-        continue
-
-    # for g in grid:
-    #     print(g)
-    # print()
-
-    search()
-    ans = -1 if ans == MAX else ans
+    # print(parent)
+    ans = -1 if sum(visited) != num_nodes else ans # 모든 섬을 연결할 수 없는 경우 -1
     print(f"#{t} {ans}")
 
 

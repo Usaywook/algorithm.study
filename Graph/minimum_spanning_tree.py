@@ -80,6 +80,7 @@ def primIterative(start):
     """
     visited = set()  # MST에 포함된 노드들을 저장
     min_heap = []  # (가중치, 시작노드, 도착노드)를 저장하는 최소 힙
+    tree = [] # MST에 포함된 간선들을 저장하는 리스트 추가
     total_cost = 0  # MST의 총 비용
 
     # 시작 노드를 방문하고, 시작 노드와 인접한 모든 간선을 최소 힙에 추가
@@ -96,6 +97,8 @@ def primIterative(start):
         # 새로운 노드를 방문하고, 간선의 가중치를 비용에 추가
         visited.add(to)
         total_cost += weight
+        tree.append((frm, to, weight))  # 간선 저장
+
         print(f"{frm} - {weight} - {to}")
 
         # 새로 방문한 노드의 인접 간선들을 최소 힙에 추가
